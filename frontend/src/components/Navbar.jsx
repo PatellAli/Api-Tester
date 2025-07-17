@@ -15,7 +15,7 @@ export const Navbar = () => {
                     sm: "row"
                 }}
             >
-
+                
                 <Text
                     fontSize={{ base: "22", sm: "28" }}
 					fontWeight={"bold"}
