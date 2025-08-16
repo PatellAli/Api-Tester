@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const ReqLogSchema = new mongoose.Schema({
+  name: String,
   method: String,
   url: String,
   headers: Object,
