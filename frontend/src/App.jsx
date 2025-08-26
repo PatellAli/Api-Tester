@@ -5,6 +5,7 @@ import { WorkPage } from "./pages/WorkPage";
 import { Navbar } from "./components/Navbar";
 import LoginPage from "./pages/LoginPage.jsx";
 import Signup from "./pages/SignupPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
           <Route path="/signup" element={<Signup />}></Route>
 
           <Route path="/login" element={<LoginPage />}></Route>
-          <Route path="/" element={<WorkPage />} />
+          <Route path="/workPage" element={<WorkPage />} />
+          <Route path="/" element={<HomePage />} />
         </Routes>
       </Box>
     </>

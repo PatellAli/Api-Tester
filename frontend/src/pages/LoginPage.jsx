@@ -11,13 +11,16 @@ import {
   FormControl,
   FormLabel,
   useToast,
+  HStack,
+  Spacer,
 } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
 
 export default function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const toast = useToast();
 
@@ -32,17 +35,20 @@ export default function Login() {
       });
 
       const data = await res.json();
-      if (res.data.success) {
+
+      if (res.ok && data.success) {
         toast({
           title: "Login successful",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
+        localStorage.setItem("token", data.token);
+        navigate("/workpage");
       } else {
         toast({
           title: "Error",
-          description: data.message || "Something went wrong",
+          description: data.message || "Invalid email or password",
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -60,71 +66,93 @@ export default function Login() {
   };
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bgGradient="linear(to-br, #0f2027, #203a43, #2c5364)"
-      color="white"
-    >
-      <MotionBox
-        bg="rgba(255,255,255,0.05)"
-        p={8}
-        borderRadius="2xl"
-        boxShadow="lg"
-        backdropFilter="blur(10px)"
-        width="sm"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+    <>
+      <Flex
+        as="nav"
+        bg="teal.500"
+        color="white"
+        px={6}
+        py={4}
+        align="center"
+        boxShadow="md"
       >
-        <VStack spacing={5} as="form" onSubmit={handleSubmit}>
-          <Heading size="lg">Welcome Back</Heading>
-          <FormControl>
-            <FormLabel>Email</FormLabel>
-            <Input
-              type="email"
-              bg="whiteAlpha.200"
-              border="none"
-              _focus={{ bg: "whiteAlpha.300" }}
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Password</FormLabel>
-            <Input
-              type="password"
-              bg="whiteAlpha.200"
-              border="none"
-              _focus={{ bg: "whiteAlpha.300" }}
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
-            />
-          </FormControl>
-          <Button
-            type="submit"
-            colorScheme="teal"
-            w="full"
-            _hover={{ transform: "scale(1.02)" }}
-            transition="0.2s"
-          >
-            Login
+        <Heading size="md">API Tester</Heading>
+        <Spacer />
+        <HStack spacing={6}>
+          <Button variant="link" color="white" onClick={() => navigate("/")}>
+            Home
           </Button>
-          <Text fontSize="sm">
-            Don’t have an account?{" "}
-            <Link to="/signup" style={{ color: "#4FD1C5" }}>
-              Sign up
-            </Link>
-          </Text>
-        </VStack>
-      </MotionBox>
-    </Flex>
+          <Button variant="link" color="white">
+            About Us
+          </Button>
+        </HStack>
+      </Flex>
+      <Flex
+        minH="100vh"
+        align="center"
+        justify="center"
+        bgGradient="linear(to-br, #0f2027, #203a43, #2c5364)"
+        color="white"
+      >
+        <MotionBox
+          bg="rgba(255,255,255,0.05)"
+          p={8}
+          borderRadius="2xl"
+          boxShadow="lg"
+          backdropFilter="blur(10px)"
+          width="sm"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <VStack spacing={5} as="form" onSubmit={handleSubmit}>
+            <Heading size="lg">Welcome Back</Heading>
+            <FormControl>
+              <FormLabel>Email</FormLabel>
+              <Input
+                type="email"
+                bg="whiteAlpha.200"
+                border="none"
+                _focus={{ bg: "whiteAlpha.300" }}
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                bg="whiteAlpha.200"
+                border="none"
+                _focus={{ bg: "whiteAlpha.300" }}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                required
+              />
+            </FormControl>
+            <Button
+              type="submit"
+              colorScheme="teal"
+              w="full"
+              _hover={{ transform: "scale(1.02)" }}
+              transition="0.2s"
+            >
+              Login
+            </Button>
+            <Text fontSize="sm">
+              Don’t have an account?{" "}
+              <Link to="/signup" style={{ color: "#4FD1C5" }}>
+                Sign up
+              </Link>
+            </Text>
+          </VStack>
+        </MotionBox>
+      </Flex>
+    </>
   );
 }

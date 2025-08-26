@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 import axios from "axios";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/Sidebar.jsx";
 
 export const WorkPage = () => {
   const [method, setMethod] = useState("GET");
@@ -25,11 +25,23 @@ export const WorkPage = () => {
   const [loading, setLoading] = useState(false);
   const [time, setTime] = useState("");
 
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+
+  const handleSelectRequest = (req) => {
+    setSelectedRequestId(req._id);
+    setMethod(req.method || "GET");
+    setURL(req.url || "");
+    setHeaders(JSON.stringify(req.headers || {}, null, 2));
+    setBody(JSON.stringify(req.body || {}, null, 2));
+    setResponse(req.response || null);
+  };
+
   const bg = useColorModeValue("gray.100", "gray.800");
   const boxBg = useColorModeValue("gray.700", "gray.700");
   const inputBg = useColorModeValue("gray.700", "gray.900");
 
   const sendRequest = async () => {
+    const token = localStorage.getItem("token");
     setLoading(true);
     const startTime = Date.now();
 
@@ -57,9 +69,10 @@ export const WorkPage = () => {
         }
       }
 
+      // ✅ Send request to EXTERNAL API only
       const res = await axios({
         method,
-        url,
+        url, // full external API URL
         headers: parsedHeaders,
         data: method === "GET" ? undefined : parsedBody,
       });
@@ -77,13 +90,33 @@ export const WorkPage = () => {
       setTime(duration);
       setResponse(responseData);
 
-      await axios.post("http://localhost:5000/history", {
-        method,
-        url,
-        headers,
-        body: body.trim() !== "" ? JSON.parse(body) : {},
-        response: responseData,
-      });
+      // ✅ Now update your backend history separately
+      if (selectedRequestId) {
+        await axios.patch(
+          `http://localhost:5000/history/updateReq/${selectedRequestId}`,
+          {
+            method,
+            url,
+            headers: parsedHeaders,
+            body: parsedBody,
+            response: responseData, // ✅ not res.data
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else {
+        const saved = await axios.post("http://localhost:5000/history", {
+          method,
+          url,
+          headers: parsedHeaders,
+          body: parsedBody,
+          response: responseData,
+        });
+        setSelectedRequestId(saved.data._id);
+      }
     } catch (error) {
       const errData = {
         status: error.response?.status || 500,
@@ -96,7 +129,6 @@ export const WorkPage = () => {
       setLoading(false);
     }
   };
-
   const methodColor = {
     GET: "blue",
     POST: "green",
@@ -107,7 +139,7 @@ export const WorkPage = () => {
 
   return (
     <HStack>
-      <Sidebar />
+      <Sidebar onSelectRequest={handleSelectRequest} />
       <Container maxW="container.xl" py={12} bg={"gray.700"} textColor="white">
         <VStack spacing={4} align="stretch">
           <HStack>

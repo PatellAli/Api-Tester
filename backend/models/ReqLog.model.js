@@ -20,6 +20,10 @@ const ReqLogSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
 
 export const ReqLog = mongoose.model("ReqLog", ReqLogSchema);

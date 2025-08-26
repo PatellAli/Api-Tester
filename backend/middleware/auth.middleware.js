@@ -20,6 +20,8 @@ export const authenticateToken = async (req, res, next) => {
 
     // Attach user ID or full payload to request
     req.user = decoded;
+    console.log(decoded);
+
     next();
   });
 };

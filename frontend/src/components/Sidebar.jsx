@@ -15,41 +15,90 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Toast,
 } from "@chakra-ui/react";
 import {
   AddIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  DeleteIcon,
   EditIcon,
 } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const Sidebar = () => {
+const Sidebar = ({ onSelectRequest }) => {
   const [folders, setFolders] = useState([]);
   const [expandedFolderId, setExpandedFolderId] = useState(null);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isFolderOpen,
+    onOpen: onFolderOpen,
+    onClose: onFolderClose,
+  } = useDisclosure();
+
+  const {
+    isOpen: isConfirmOpen,
+    onOpen: onConfirmOpen,
+    onClose: onConfirmClose,
+  } = useDisclosure();
+
   const [reqName, setReqName] = useState("");
+  const [folderName, setFolderName] = useState("");
 
   const [requests, setRequests] = useState([]);
-
-  const toggleFolder = (folderId) => {
-    setExpandedFolderId((prevId) => (prevId === folderId ? null : folderId));
-  };
-
-  const addRequest = async () => {
-    const token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODc5NDA0MTQyOTg5NWY1YzIyMzRjNTEiLCJpYXQiOjE3NTQwMjczODQsImV4cCI6MTc1NDYzMjE4NH0.l15a4MZLNplAS3uoYmR2yCB7R5c8pqQNFSO5LZfzJRo";
+  const [currentFolderId, setCurrentFolderId] = useState(null); // ✅ Track which folder we’re adding to
+  // ---------- Fetch helpers ----------
+  const fetchFolders = async () => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/history/createReq",
-        { name: reqName, folderId: null },
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:5000/history/getFolders",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Request saved:", response.data);
+      console.log("Fetched folders:", response);
+      setFolders(response.data);
+    } catch (error) {
+      console.error("Failed to fetch folders", error);
+    }
+  };
+
+  const fetchUnassigned = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:5000/history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRequests(response.data);
+    } catch (error) {
+      console.error("Error fetching no-folder requests", error);
+    }
+  };
+
+  // Run once on mount
+  useEffect(() => {
+    fetchFolders();
+    fetchUnassigned();
+  }, []);
+
+  // ---------- Create / Add ----------
+  const addRequest = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.post(
+        "http://localhost:5000/history/createReq",
+        { name: reqName, folderId: currentFolderId }, // ✅ Use picked folder
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       setReqName("");
+      setCurrentFolderId(null);
       onClose();
+
+      // Refresh data
+      await fetchFolders();
+      await fetchUnassigned();
     } catch (error) {
       console.error(
         "Error adding request:",
@@ -58,41 +107,111 @@ const Sidebar = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODc5NDA0MTQyOTg5NWY1YzIyMzRjNTEiLCJpYXQiOjE3NTQwMjczODQsImV4cCI6MTc1NDYzMjE4NH0.l15a4MZLNplAS3uoYmR2yCB7R5c8pqQNFSO5LZfzJRo";
-        const response = await axios.get(
-          "http://localhost:5000/history/getFolders",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setFolders(response.data);
-      } catch (error) {
-        console.error("Failed to fetch folders", error);
-      }
-    };
-    fetchData();
-  }, []);
+  const createFolder = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.post(
+        "http://localhost:5000/history/createFolder",
+        { name: folderName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  useEffect(() => {
-    const fetchreq = async () => {
-      try {
-        const token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODc5NDA0MTQyOTg5NWY1YzIyMzRjNTEiLCJpYXQiOjE3NTQwMjczODQsImV4cCI6MTc1NDYzMjE4NH0.l15a4MZLNplAS3uoYmR2yCB7R5c8pqQNFSO5LZfzJRo";
-        const response = await axios.get("http://localhost:5000/history", {
-          headers: { Authorization: `Bearer ${token}` },
+      setFolderName("");
+      onFolderClose();
+
+      // Refresh folders
+      await fetchFolders();
+    } catch (error) {
+      console.error(
+        "Error in creating folder: ",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  const toggleFolder = (folderId) => {
+    setExpandedFolderId((prevId) => (prevId === folderId ? null : folderId));
+  };
+
+  //Delete request
+  const deleteReq = async (id) => {
+    const token = localStorage.getItem("token");
+    console.log("delete btn clicked");
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/history/deleteReq/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(response.data.success);
+
+      if (response.data.success) {
+        Toast({
+          title: "Success",
+          description: response.data.message,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
         });
-        setRequests(response.data);
-      } catch (error) {
-        console.error("Error fetching no-folder requests", error);
+        setRequests((prev) => prev.filter((req) => req._id !== id));
+        // Refresh data
+        await fetchFolders();
+        await fetchUnassigned();
       }
-    };
-    fetchreq();
-  });
+    } catch (error) {
+      console.error("ERROR in deleting req: ", error);
+      Toast({
+        title: "ERROR",
+        description:
+          error.response?.data?.message || "Failed to delete the request",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
+  const deleteFolder = async () => {
+    console.log("my2", currentFolderId);
+
+    if (!currentFolderId) {
+      console.error("No folder ID set!");
+      return;
+    }
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/history/deleteFolder/${currentFolderId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        Toast({
+          title: "Success",
+          description: response.data.message,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        await fetchFolders();
+        await fetchUnassigned();
+      }
+    } catch (error) {
+      console.error(
+        "ERROR in deleting folder: ",
+        error.response?.data || error
+      );
+    } finally {
+      // ✅ close modal after action
+      onConfirmClose();
+    }
+  };
+
+  // ✅ open modal when delete button clicked
+  const handleDeleteClick = () => {
+    onConfirmOpen(); // just opens modal
+  };
   return (
     <Box
       w="300px"
@@ -105,13 +224,17 @@ const Sidebar = () => {
     >
       {/* Top Buttons */}
       <HStack margin={"6px"}>
-        <Button fontSize={"14px"} onClick={onOpen}>
-          Add Request
-          <AddIcon marginLeft={"5px"} />
+        <Button
+          fontSize={"14px"}
+          onClick={() => {
+            setCurrentFolderId(null);
+            onOpen();
+          }}
+        >
+          Add Request <AddIcon marginLeft={"5px"} />
         </Button>
-        <Button fontSize={"14px"}>
-          Add Folder
-          <AddIcon marginLeft={"5px"} />
+        <Button fontSize={"14px"} onClick={onFolderOpen}>
+          Add Folder <AddIcon marginLeft={"5px"} />
         </Button>
       </HStack>
 
@@ -154,14 +277,33 @@ const Sidebar = () => {
                 size="xs"
                 variant="ghost"
                 colorScheme="green"
-                onClick={onOpen}
+                onClick={() => {
+                  setCurrentFolderId(folder._id);
+                  onOpen();
+                }} // ✅ Add request to that folder
                 _hover={{ bg: "gray.700" }}
                 px={2}
               >
                 <AddIcon boxSize={3} />
               </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme="red"
+                onClick={() => {
+                  console.log("My", folder._id);
+
+                  setCurrentFolderId(folder._id);
+                  handleDeleteClick();
+                }} // ✅ Add request to that folder
+                _hover={{ bg: "gray.700" }}
+                px={2}
+              >
+                <DeleteIcon />
+              </Button>
             </HStack>
 
+            {/* Requests inside folder */}
             <Collapse in={expandedFolderId === folder._id} animateOpacity>
               <VStack align="start" pl={4} pt={2} spacing={1}>
                 {folder.requests.length === 0 ? (
@@ -170,19 +312,30 @@ const Sidebar = () => {
                   </Text>
                 ) : (
                   folder.requests.map((req) => (
-                    <Button
-                      key={req._id}
-                      variant="ghost"
-                      size="sm"
-                      color="gray.300"
-                      justifyContent="flex-start"
-                      width="100%"
-                      _hover={{ bg: "gray.700" }}
-                    >
-                      <Text fontWeight="bold" as="span" mr={2}>
+                    <HStack key={req._id} justifyContent={"space-between"}>
+                      <Button
+                        key={req._id}
+                        variant="ghost"
+                        size="sm"
+                        color="gray.300"
+                        justifyContent="flex-start"
+                        width="100%"
+                        _hover={{ bg: "gray.700" }}
+                        onClick={() => onSelectRequest(req)}
+                      >
                         {req.name}
-                      </Text>
-                    </Button>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        color="red.400"
+                        size="xs"
+                        onClick={() => {
+                          deleteReq(req._id);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </Button>
+                    </HStack>
                   ))
                 )}
               </VStack>
@@ -193,14 +346,14 @@ const Sidebar = () => {
         ))}
       </VStack>
 
-      <VStack align="stretch" spacing={2}>
-        {/* No folder requests */}
-        {requests.length > 0 && (
-          <>
-            <Text fontSize="sm" color="gray.400" fontWeight="bold">
-              Unassigned Requests
-            </Text>
-            {requests.map((req) => (
+      {/* Unassigned requests */}
+      {requests.length > 0 && (
+        <VStack align="stretch" spacing={2}>
+          <Text fontSize="sm" color="gray.400" fontWeight="bold">
+            Unassigned Requests
+          </Text>
+          {requests.map((req) => (
+            <HStack>
               <Button
                 key={req._id}
                 variant="ghost"
@@ -209,16 +362,25 @@ const Sidebar = () => {
                 justifyContent="flex-start"
                 width="100%"
                 _hover={{ bg: "gray.700" }}
+                onClick={() => onSelectRequest(req)}
               >
                 {req.name}
               </Button>
-            ))}
-            <Divider borderColor="gray.600" />
-          </>
-        )}
-
-        {/* Folder requests here */}
-      </VStack>
+              <Button
+                variant="ghost"
+                color="red.400"
+                size="xs"
+                onClick={() => {
+                  deleteReq(req._id);
+                }}
+              >
+                <DeleteIcon />
+              </Button>
+            </HStack>
+          ))}
+          <Divider borderColor="gray.600" />
+        </VStack>
+      )}
 
       {/* Add Request Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -242,6 +404,49 @@ const Sidebar = () => {
               isDisabled={!reqName.trim()}
             >
               OK
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Add Folder Modal */}
+      <Modal isOpen={isFolderOpen} onClose={onFolderClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>New Folder</ModalHeader>
+          <ModalBody>
+            <Input
+              placeholder="Enter Folder name"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={onFolderClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={createFolder}
+              isDisabled={!folderName.trim()}
+            >
+              ADD
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isConfirmOpen} onClose={onConfirmClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Delete Folder?</ModalHeader>
+          <ModalBody>Are you sure you want to delete this folder?</ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={onConfirmClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={deleteFolder}>
+              Delete
             </Button>
           </ModalFooter>
         </ModalContent>
