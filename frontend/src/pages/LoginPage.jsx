@@ -75,6 +75,7 @@ export default function Login() {
         py={4}
         align="center"
         boxShadow="md"
+        background={"linear-gradient(90deg, #000c3fff, #000622ff)"}
       >
         <Heading size="md">API Tester</Heading>
         <Spacer />

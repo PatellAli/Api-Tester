@@ -13,6 +13,8 @@ import { TextType } from "../components/TextType.jsx";
 import Login from "./LoginPage.jsx";
 import Signup from "./SignupPage.jsx";
 import { useNavigate } from "react-router-dom";
+import SpotlightCard from "../components/SpotLightCard.jsx";
+
 const HomePage = () => {
   const navigate = useNavigate();
   return (
@@ -26,6 +28,7 @@ const HomePage = () => {
         py={4}
         align="center"
         boxShadow="md"
+        background={"linear-gradient(90deg, #000c3fff, #000622ff)"}
       >
         <Heading size="md">API Tester</Heading>
         <Spacer />
@@ -33,7 +36,11 @@ const HomePage = () => {
           <Button variant="link" color="white">
             Home
           </Button>
-          <Button variant="link" color="white">
+          <Button
+            variant="link"
+            color="white"
+            onClick={() => navigate("/aboutus")}
+          >
             About Us
           </Button>
         </HStack>
@@ -57,13 +64,18 @@ const HomePage = () => {
           showCursor={true}
           cursorCharacter="|"
         />
-        <Text fontSize="lg" color="gray.600" mb={10} textAlign="center">
+        <Text
+          fontSize="lg"
+          color={"linear-gradient(90deg, #000c3fff, #000622ff)"}
+          mb={10}
+          textAlign="center"
+        >
           A simple and powerful tool to test your APIs with ease.
         </Text>
 
         <HStack spacing={6}>
           <Button
-            colorScheme="teal"
+            colorScheme="whiteAlpha"
             size="lg"
             px={10}
             onClick={() => navigate("/login")}
@@ -71,7 +83,7 @@ const HomePage = () => {
             Login
           </Button>
           <Button
-            colorScheme="teal"
+            colorScheme="whiteAlpha"
             size="lg"
             variant="outline"
             px={10}
@@ -79,6 +91,40 @@ const HomePage = () => {
           >
             Signup
           </Button>
+        </HStack>
+
+        <Spacer />
+
+        <HStack spacing={6} mt={10} width={"150%"} justifyContent="center">
+          {" "}
+          {/* 👈 spacing adds gap, mt adds space on top */}
+          <SpotlightCard
+            className="custom-spotlight-card"
+            spotlightColor="rgba(255, 255, 255, 0.2)"
+          >
+            <Box p={6}>
+              <Heading size="md" mb={2} color={"white"}>
+                📜 History Tracking
+              </Heading>
+              <Text color={"white"}>
+                Save and review past requests anytime to debug faster.
+              </Text>
+            </Box>
+          </SpotlightCard>
+          <SpotlightCard
+            className="custom-spotlight-card"
+            spotlightColor="rgba(255, 255, 255, 0.2)"
+          >
+            <Box p={6}>
+              <Heading size="md" mb={2} color={"white"}>
+                Save & Organize Requests
+              </Heading>
+              <Text color={"white"} fontWeight={"normal"}>
+                Keep your API requests organized into collections for quick
+                access.
+              </Text>
+            </Box>
+          </SpotlightCard>
         </HStack>
       </Container>
     </>
