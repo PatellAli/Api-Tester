@@ -25,6 +25,7 @@ import {
   EditIcon,
 } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
+// ...existing imports...
 import axios from "axios";
 
 const Sidebar = ({ onSelectRequest }) => {
@@ -49,6 +50,15 @@ const Sidebar = ({ onSelectRequest }) => {
 
   const [requests, setRequests] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null); // ✅ Track which folder we’re adding to
+  // Edit folder modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFolderName, setEditFolderName] = useState("");
+  const [editFolderId, setEditFolderId] = useState(null);
+
+  const [editReqName, setEditReqName] = useState("");
+  const [editReqId, setEditReqId] = useState(null);
+  const [isEditReqModalOpen, setIsEditReqModalOpen] = useState(false);
+
   // ---------- Fetch helpers ----------
   const fetchFolders = async () => {
     try {
@@ -212,6 +222,75 @@ const Sidebar = ({ onSelectRequest }) => {
   const handleDeleteClick = () => {
     onConfirmOpen(); // just opens modal
   };
+
+  //To Update Folder Name
+  const updateFname = async () => {
+    const token = localStorage.getItem("token");
+    console.log(editFolderId, editFolderName);
+
+    try {
+      const response = await axios.patch(
+        `http://localhost:5000/history/updateFolderName/${editFolderId}`,
+        { name: editFolderName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        Toast({
+          title: "Success",
+          description: response.data.message,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        await fetchFolders();
+        await fetchUnassigned();
+      }
+    } catch (error) {
+      console.error("ERROR in updating request name: ", error);
+      Toast({
+        title: "ERROR",
+        description:
+          error.response?.data?.message || "Failed to update the request name",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const updateReqName = async () => {
+    const token = localStorage.getItem("token");
+    console.log(editReqId, editReqName);
+    try {
+      const response = await axios.patch(
+        `http://localhost:5000/history/updateReqName/${editReqId}`,
+        { name: editReqName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        Toast({
+          title: "Success",
+          description: response.data.message,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        await fetchFolders();
+        await fetchUnassigned();
+      }
+    } catch (error) {
+      console.error("ERROR in updating request name: ", error);
+      Toast({
+        title: "ERROR",
+        description:
+          error.response?.data?.message || "Failed to update the request name",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
     <Box
       w="300px"
@@ -266,7 +345,11 @@ const Sidebar = ({ onSelectRequest }) => {
                 size="xs"
                 variant="ghost"
                 colorScheme="green"
-                onClick={() => console.log("Edit folder", folder._id)}
+                onClick={() => {
+                  setEditFolderId(folder._id);
+                  setEditFolderName(folder.name);
+                  setIsEditModalOpen(true);
+                }}
                 _hover={{ bg: "gray.700" }}
                 px={2}
               >
@@ -327,6 +410,18 @@ const Sidebar = ({ onSelectRequest }) => {
                       </Button>
                       <Button
                         variant="ghost"
+                        color={"green.400"}
+                        size="xs"
+                        onClick={() => {
+                          setEditReqId(req._id);
+                          setEditReqName(req.name);
+                          setIsEditReqModalOpen(true);
+                        }}
+                      >
+                        <EditIcon boxSize={3} />
+                      </Button>
+                      <Button
+                        variant="ghost"
                         color="red.400"
                         size="xs"
                         onClick={() => {
@@ -381,6 +476,62 @@ const Sidebar = ({ onSelectRequest }) => {
           <Divider borderColor="gray.600" />
         </VStack>
       )}
+      {/*Edit Req Name modal */}
+      <Modal
+        isOpen={isEditReqModalOpen}
+        onClose={() => setIsEditReqModalOpen(false)}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Request Name</ModalHeader>
+          <ModalBody>
+            <Input
+              placeholder="Enter new request name"
+              value={editReqName}
+              onChange={(e) => setEditReqName(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={() => setIsEditReqModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={updateReqName}
+              isDisabled={!editReqName.trim()}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Folder Name Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Folder Name</ModalHeader>
+          <ModalBody>
+            <Input
+              placeholder="Enter new folder name"
+              value={editFolderName}
+              onChange={(e) => setEditFolderName(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={updateFname}
+              isDisabled={!editFolderName.trim()}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Add Request Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>

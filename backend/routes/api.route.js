@@ -7,6 +7,8 @@ import {
   updateReq,
   deleteReq,
   deleteFolder,
+  updatedFolderName,
+  updatedRequestName,
 } from "../controllers/api.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 
@@ -25,5 +27,17 @@ router.patch("/updateReq/:requestId", authenticateToken, updateReq);
 router.delete("/deleteReq/:id", authenticateToken, deleteReq);
 
 router.delete("/deleteFolder/:id", authenticateToken, deleteFolder);
+
+router.patch(
+  "/updateFolderName/:folderId",
+  authenticateToken,
+  updatedFolderName
+);
+
+router.patch(
+  "/updateReqName/:requestId",
+  authenticateToken,
+  updatedRequestName
+);
 
 export default router;

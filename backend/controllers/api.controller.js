@@ -169,14 +169,80 @@ export const deleteFolder = async (req, res) => {
         .json({ success: false, message: "Folder not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Folder and its requests deleted successfully",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Folder and its requests deleted successfully",
+    });
   } catch (error) {
     console.error("Folder delete error: ", error);
     res.status(500).json({ success: false, message: "SERVER ERROR" });
+  }
+};
+
+export const updatedFolderName = async (req, res) => {
+  try {
+    const { folderId } = req.params;
+    const { name } = req.body;
+    console.log(folderId, name);
+
+    if (!name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Name is required" });
+    }
+    const updatedFolder = await Folder.findByIdAndUpdate(
+      folderId,
+      { $set: { name } },
+      { new: true }
+    );
+    if (!updatedFolder) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Folder not found" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Name updated successfully",
+      folder: updatedFolder,
+    });
+  } catch (error) {
+    console.error("Update name error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error updating name" });
+  }
+};
+export const updatedRequestName = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { name } = req.body;
+    console.log(requestId, name);
+    if (!name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Name is required" });
+    }
+    const updatedRequest = await ReqLog.findByIdAndUpdate(
+      requestId,
+      { name },
+      { new: true }
+    );
+
+    if (!updatedRequest) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Request not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Request name updated successfully",
+      request: updatedRequest,
+    });
+  } catch (error) {
+    console.error("Update name error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error updating name" });
   }
 };
